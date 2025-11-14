@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- MODIFIED: Title changed -->
+    <title>Jawad Mall</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            /* Blue Dot Splash Aesthetic */
+            background-color: #f7f9fb;
+            background-image: radial-gradient(#dbeafe 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        .main-content {
+            min-height: calc(100vh - 80px); /* 80px is approx header height */
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Custom Message Box for Admin Feedback (Not alert()) -->
+    <div id="message-box" class="fixed top-4 right-4 z-50 transition-all duration-300 opacity-0 transform translate-x-full">
+        <div class="bg-indigo-600 text-white p-3 rounded-lg shadow-xl font-medium" id="message-content"></div>
+    </div>
+
+    <!-- Header -->
+    <header class="bg-white shadow-md sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex justify-between items-center">
+            <!-- MODIFIED: Store name changed -->
+            <h1 class="text-3xl font-bold text-gray-900 tracking-tight">
+                <span class="text-indigo-600">Jawad</span> Mall
+            </h1>
+            <button id="admin-toggle" class="bg-indigo-500 hover:bg-indigo-600 text-white font-medium py-2 px-4 rounded-lg shadow-md transition duration-150 ease-in-out">
+                Admin Login
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 main-content">
+
+        <!-- Public Gallery View -->
+        <div id="public-view" class="space-y-8">
+            <h2 class="text-2xl font-semibold text-gray-800 border-b-2 pb-2 border-indigo-200">New Arrivals & Collection</h2>
+            <div id="product-gallery" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <!-- Product cards will be injected here -->
+                <div class="text-center text-gray-500 col-span-full py-12" id="loading-gallery">Loading products...</div>
+            </div>
+        </div>
+
+        <!-- Product Detail Modal (Initially Hidden) -->
+        <div id="detail-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 z-40 hidden flex items-center justify-center p-4">
+            <div class="bg-white rounded-xl shadow-2xl max-w-4xl w-full p-6 space-y-4 relative">
+                <button id="close-detail-modal" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 transition">&times;</button>
+                <div class="flex flex-col md:flex-row gap-6">
+                    <div class="md:w-1/2">
+                        <img id="detail-image" class="w-full h-80 object-cover rounded-lg shadow-inner" src="" onerror="this.src='https://placehold.co/400x400/e0e7ff/3730a3?text=Image+Not+Found'" alt="Product Image">
+                    </div>
+                    <div class="md:w-1/2 space-y-4">
+                        <h3 id="detail-name" class="text-3xl font-bold text-gray-900"></h3>
+                        <p id="detail-price" class="text-2xl font-extrabold text-indigo-600"></p>
+                        <p id="detail-full-description" class="text-gray-700 leading-relaxed"></p>
+                        <button id="detail-back-button" class="mt-4 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg transition duration-150">
+                            Back to Gallery
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Admin Panel View (Initially Hidden) -->
+        <div id="admin-view" class="hidden">
+            <h2 class="text-3xl font-bold text-indigo-700 mb-6">Store Administration</h2>
+            <div class="bg-white p-6 rounded-xl shadow-lg border border-indigo-200 space-y-8">
+
+                <!-- Add/Edit Product Form -->
+                <div>
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4 border-b pb-2">
+                        <span id="form-title">Add New Product</span>
+                    </h3>
+                    <form id="product-form" class="space-y-4">
+                        <input type="hidden" id="product-id">
+                        
+                        <div>
+                            <label for="name" class="block text-sm font-medium text-gray-700">Name</label>
+                            <input type="text" id="name" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border focus:border-indigo-500 focus:ring-indigo-500">
+                        </div>
+
+                        <div>
+                            <label for="price" class="block text-sm font-medium text-gray-700">Price (e.g., 49.99)</label>
+                            <input type="number" step="0.01" id="price" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border focus:border-indigo-500 focus:ring-indigo-500">
+                        </div>
+                        
+                        <div>
+                            <label for="imageUrl" class="block text-sm font-medium text-gray-700">Image URL</label>
+                            <input type="url" id="imageUrl" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border focus:border-indigo-500 focus:ring-indigo-500">
+                        </div>
+
+                        <div>
+                            <label for="shortDescription" class="block text-sm font-medium text-gray-700">Short Description (for Gallery)</label>
+                            <textarea id="shortDescription" required rows="2" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border focus:border-indigo-500 focus:ring-indigo-500"></textarea>
+                        </div>
+                        
+                        <div>
+                            <label for="fullDescription" class="block text-sm font-medium text-gray-700">Full Description (for Detail View)</label>
+                            <textarea id="fullDescription" required rows="4" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border focus:border-indigo-500 focus:ring-indigo-500"></textarea>
+                        </div>
+
+                        <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-150">
+                            Save Product
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Product List for Editing/Deleting -->
+                <div>
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4 border-b pb-2">Manage Current Products</h3>
+                    <ul id="admin-product-list" class="space-y-3">
+                        <!-- Admin product list items will be injected here -->
+                        <li class="text-center text-gray-500 py-4" id="loading-admin-list">Loading product list...</li>
+                    </ul>
+                    <button id="admin-logout" class="mt-6 bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-lg shadow-md transition duration-150">
+                        Log Out
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Login Modal -->
+        <div id="login-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 z-40 hidden flex items-center justify-center p-4">
+            <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 space-y-4">
+                <h3 class="text-2xl font-bold text-gray-900 text-center">Admin Access</h3>
+                <form id="login-form" class="space-y-4">
+                    <div>
+                        <label for="login-username" class="block text-sm font-medium text-gray-700">Username</label>
+                        <input type="text" id="login-username" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border focus:border-indigo-500 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label for="login-password" class="block text-sm font-medium text-gray-700">Password</label>
+                        <input type="password" id="login-password" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border focus:border-indigo-500 focus:ring-indigo-500">
+                    </div>
+                    <!-- This is the error message you requested -->
+                    <p class="text-xs text-red-500 hidden" id="login-error">ask Rawad for this 🙄</p>
+                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition duration-150">
+                        Login
+                    </button>
+                </form>
+                <button id="close-login-modal" class="w-full text-sm text-gray-500 mt-2 hover:text-gray-700">Cancel</button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Load Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-auth.js";
+        import { 
+            getFirestore, collection, doc, onSnapshot, 
+            addDoc, setDoc, deleteDoc, setLogLevel
+        } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-firestore.js";
+
+        // IMPORTANT: Use the provided global variables
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // Set log level for debugging Firebase operations
+        setLogLevel('debug');
+
+        // --- Global State and Firebase Setup ---
+        let db;
+        let auth;
+        let userId = null;
+        let products = [];
+        let isAuthenticated = false; // Mock admin authentication state
+
+        const app = initializeApp(firebaseConfig);
+        db = getFirestore(app);
+        auth = getAuth(app);
+
+        // Utility: Get the correct public collection reference
+        const getProductsCollectionRef = () => {
+            return collection(db, `artifacts/${appId}/public/data/products`);
+        };
+
+        // --- Custom Message Box Handler (replacing alert()) ---
+        const messageBox = document.getElementById('message-box');
+        const messageContent = document.getElementById('message-content');
+        let messageTimeout;
+
+        const showMessage = (message, isError = false) => {
+            clearTimeout(messageTimeout);
+            messageContent.textContent = message;
+            
+            messageBox.classList.remove('opacity-0', 'translate-x-full', 'bg-red-500', 'bg-indigo-600');
+            messageBox.classList.add('opacity-100', 'translate-x-0', isError ? 'bg-red-500' : 'bg-indigo-600');
+
+            messageTimeout = setTimeout(() => {
+                messageBox.classList.remove('opacity-100', 'translate-x-0');
+                messageBox.classList.add('opacity-0', 'translate-x-full');
+            }, 3000);
+        };
+
+
+        // --- Authentication & View Control ---
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                userId = user.uid;
+                console.log("Firebase Authenticated. UID:", userId);
+            } else {
+                console.log("No Firebase user. Attempting sign-in.");
+                try {
+                    if (initialAuthToken) {
+                        console.log("Using custom token.");
+                        await signInWithCustomToken(auth, initialAuthToken);
+                    } else {
+                        console.log("Using anonymous sign-in.");
+                        await signInAnonymously(auth);
+                    }
+                } catch (error) {
+                    console.error("Firebase Auth Error:", error);
+                }
+            }
+            // Once auth is ready (even if anonymous), start listening for data
+            setupGalleryListener();
+        });
+
+
+        // --- Public View Rendering ---
+
+        const productGallery = document.getElementById('product-gallery');
+        const loadingGallery = document.getElementById('loading-gallery');
+
+        const setupGalleryListener = () => {
+            if (!auth.currentUser && !initialAuthToken) {
+                console.warn("Auth not ready, delaying gallery listener setup.");
+                // We retry after a short delay, onAuthStateChanged should handle this
+                setTimeout(setupGalleryListener, 500);
+                return;
+            }
+            
+            console.log("Setting up gallery listener.");
+            const productsRef = getProductsCollectionRef();
+
+            onSnapshot(productsRef, (snapshot) => {
+                loadingGallery.classList.add('hidden');
+                products = [];
+                snapshot.forEach((doc) => {
+                    products.push({ id: doc.id, ...doc.data() });
+                });
+                renderPublicGallery();
+                if (isAuthenticated) {
+                    renderAdminList();
+                }
+            }, (error) => {
+                console.error("Error setting up public gallery listener:", error);
+                loadingGallery.textContent = "Error loading products.";
+            });
+        };
+
+        const renderPublicGallery = () => {
+            productGallery.innerHTML = products.map(product => `
+                <div class="product-card bg-white p-4 rounded-xl shadow-lg border-2 border-transparent hover:border-indigo-400 transition cursor-pointer" data-id="${product.id}">
+                    <img class="w-full h-48 object-cover rounded-lg mb-3 shadow-inner" 
+                         src="${product.imageUrl}" 
+                         onerror="this.src='https://placehold.co/400x400/e0e7ff/3730a3?text=Image+Not+Found'" 
+                         alt="${product.name}">
+                    <h3 class="text-lg font-bold text-gray-900 truncate">${product.name}</h3>
+                    <p class="text-sm text-gray-600">${product.shortDescription}</p>
+                    <p class="mt-2 text-xl font-semibold text-indigo-500">$${parseFloat(product.price).toFixed(2)}</p>
+                </div>
+            `).join('');
+        };
+        
+        // --- Detailed Product Modal ---
+
+        const detailModal = document.getElementById('detail-modal');
+
+        const showDetailModal = (productId) => {
+            const product = products.find(p => p.id === productId);
+            if (!product) return;
+
+            document.getElementById('detail-name').textContent = product.name;
+            document.getElementById('detail-price').textContent = `$${parseFloat(product.price).toFixed(2)}`;
+            document.getElementById('detail-full-description').textContent = product.fullDescription;
+            document.getElementById('detail-image').src = product.imageUrl;
+            
+            detailModal.classList.remove('hidden');
+            document.body.classList.add('overflow-hidden');
+        };
+
+        // --- Admin Panel Functions (CRUD) ---
+
+        const adminProductList = document.getElementById('admin-product-list');
+        const productForm = document.getElementById('product-form');
+        const formTitle = document.getElementById('form-title');
+
+        const renderAdminList = () => {
+            const loadingAdminList = document.getElementById('loading-admin-list');
+            if (loadingAdminList) loadingAdminList.classList.add('hidden');
+
+            if (products.length === 0) {
+                 adminProductList.innerHTML = '<li class="text-gray-500 py-4">No products found. Add your first item above!</li>';
+                 return;
+            }
+
+            adminProductList.innerHTML = products.map(product => `
+                <li class="flex items-center justify-between bg-gray-50 p-3 rounded-lg border border-gray-200">
+                    <span class="font-medium text-gray-800">${product.name}</span>
+                    <div class="space-x-2">
+                        <button class="edit-btn bg-yellow-400 hover:bg-yellow-500 text-gray-800 text-sm font-medium py-1 px-3 rounded-md transition" data-id="${product.id}">
+                            Edit
+                        </button>
+                        <button class="delete-btn bg-red-500 hover:bg-red-600 text-white text-sm font-medium py-1 px-3 rounded-md transition" data-id="${product.id}">
+                            Delete
+                        </button>
+                    </div>
+                </li>
+            `).join('');
+        };
+
+        const handleProductSave = async (event) => {
+            event.preventDefault();
+            const productId = document.getElementById('product-id').value;
+            
+            const productData = {
+                name: document.getElementById('name').value,
+                price: parseFloat(document.getElementById('price').value),
+                imageUrl: document.getElementById('imageUrl').value,
+                shortDescription: document.getElementById('shortDescription').value,
+                fullDescription: document.getElementById('fullDescription').value,
+            };
+
+            const productsRef = getProductsCollectionRef();
+
+            try {
+                if (productId) {
+                    // Update existing document
+                    await setDoc(doc(productsRef, productId), productData);
+                    showMessage(`Product "${productData.name}" updated successfully!`);
+                } else {
+                    // Add new document
+                    await addDoc(productsRef, productData);
+                    showMessage(`New product "${productData.name}" added successfully!`);
+                }
+                
+                // Reset form after saving
+                resetProductForm();
+
+            } catch (e) {
+                console.error("Error saving document: ", e);
+                showMessage("Failed to save product. Check console for details.", true);
+            }
+        };
+
+        const handleProductDelete = async (productId, productName) => {
+            if (!window.confirm(`Are you sure you want to delete "${productName}"?`)) {
+                return;
+            }
+
+            try {
+                const productsRef = getProductsCollectionRef();
+                await deleteDoc(doc(productsRef, productId));
+                showMessage(`Product "${productName}" deleted successfully.`);
+            } catch (e) {
+                console.error("Error deleting document: ", e);
+                showMessage("Failed to delete product. Check console for details.", true);
+            }
+        };
+
+        const editProduct = (productId) => {
+            const product = products.find(p => p.id === productId);
+            if (!product) return;
+
+            document.getElementById('product-id').value = product.id;
+            document.getElementById('name').value = product.name;
+            document.getElementById('price').value = product.price;
+            document.getElementById('imageUrl').value = product.imageUrl;
+            document.getElementById('shortDescription').value = product.shortDescription;
+            document.getElementById('fullDescription').value = product.fullDescription;
+            
+            formTitle.textContent = `Edit Product: ${product.name}`;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        const resetProductForm = () => {
+            productForm.reset();
+            document.getElementById('product-id').value = '';
+            formTitle.textContent = 'Add New Product';
+        };
+
+
+        // --- Admin Login/Logout ---
+
+        const publicView = document.getElementById('public-view');
+        const adminView = document.getElementById('admin-view');
+        const loginModal = document.getElementById('login-modal');
+        const adminToggle = document.getElementById('admin-toggle');
+
+        const handleAdminLogin = (event) => {
+            event.preventDefault();
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+            const errorEl = document.getElementById('login-error');
+
+            // Mock credentials check
+            if (username === 'Rawad' && password === '1358') {
+                isAuthenticated = true;
+                loginModal.classList.add('hidden');
+                publicView.classList.add('hidden');
+                adminView.classList.remove('hidden');
+                adminToggle.textContent = 'View Store';
+                errorEl.classList.add('hidden');
+                renderAdminList(); // Render admin specific list on login
+            } else {
+                errorEl.classList.remove('hidden');
+            }
+        };
+
+        const handleAdminLogout = () => {
+            isAuthenticated = false;
+            publicView.classList.remove('hidden');
+            adminView.classList.add('hidden');
+            adminToggle.textContent = 'Admin Login';
+            resetProductForm();
+        };
+
+        const toggleView = () => {
+            if (isAuthenticated) {
+                // If logged in, switch between Admin and Public View
+                if (adminView.classList.contains('hidden')) {
+                    publicView.classList.add('hidden');
+                    adminView.classList.remove('hidden');
+                    adminToggle.textContent = 'View Store';
+                } else {
+                    handleAdminLogout(); // Logout instead of just switching view
+                }
+            } else {
+                // If not logged in, show login modal
+                loginModal.classList.remove('hidden');
+            }
+        };
+
+
+        // --- Event Listeners ---
+
+        document.addEventListener('click', (e) => {
+            // Product Detail Click
+            if (e.target.closest('.product-card')) {
+                const id = e.target.closest('.product-card').dataset.id;
+                showDetailModal(id);
+            }
+            // Admin Edit Button Click
+            if (e.target.classList.contains('edit-btn')) {
+                editProduct(e.target.dataset.id);
+            }
+            // Admin Delete Button Click
+            if (e.target.classList.contains('delete-btn')) {
+                const id = e.target.dataset.id;
+                const product = products.find(p => p.id === id);
+                if (product) {
+                    handleProductDelete(id, product.name);
+                }
+            }
+        });
+
+        // Toggle Admin View/Login
+        adminToggle.addEventListener('click', toggleView);
+
+        // Login Modal and Form Handlers
+        document.getElementById('login-form').addEventListener('submit', handleAdminLogin);
+        document.getElementById('close-login-modal').addEventListener('click', () => loginModal.classList.add('hidden'));
+
+        // Admin Panel Handlers
+        document.getElementById('admin-logout').addEventListener('click', handleAdminLogout);
+        document.getElementById('product-form').addEventListener('submit', handleProductSave);
+
+        // Detail Modal Handlers
+        document.getElementById('close-detail-modal').addEventListener('click', () => {
+            detailModal.classList.add('hidden');
+            document.body.classList.remove('overflow-hidden');
+        });
+        document.getElementById('detail-back-button').addEventListener('click', () => {
+            detailModal.classList.add('hidden');
+            document.body.classList.remove('overflow-hidden');
+        });
+
+    </script>
+</body>
+</html>
+
+
